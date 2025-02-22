@@ -20,6 +20,8 @@ function validateInput(req, res, next) {
     }
 
     const { requiredFields } = req.requestMetadata;
+    console.log("required Fields : ");
+    
     const missingFields = [];
 
     // Check if required fields exist in req.body
@@ -36,9 +38,9 @@ function validateInput(req, res, next) {
 
     const schema = schemas[req.requestMetadata.requestType];
     // this will select the schema.
-    
-    
+
     const result = schema.safeParse(req.body);
+    
 
     if(!result.success){
         return res.status(400).json({

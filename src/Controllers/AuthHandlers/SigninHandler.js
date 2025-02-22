@@ -1,56 +1,46 @@
 const { User } = require('../../../db');
-
-// The request needs to have the credentials: Email || mobileNumber ,Password,role
-// ip Address must match with the addresses registered.
-
 const DeviceIpGenerator = require('../AttendanceHandlers/DeviceIpGenerator');
 const { Jwt } = require('hono/utils/jwt');
 const key_jwt = process.env.KEY_JWT;
 
-
-async function SigninHandler ( req,res ){
-
-    const firstName = req.body.firstName;
-    const ipAddress = DeviceIpGenerator();
-    let primaryCred ="";
+async function SigninHandler(req, res) {
+    const { firstName, mobileNumber, email, password } = req.body;
     const role = req.requestMetadata.role;
-    const number = req.body.mobileNumber;
-    const password = req.body.password;
+    const ipAddress = DeviceIpGenerator();
 
-    // optional credential
-    primaryCred = req.body.email;
-    const email = req.body.email;
-    if(primaryCred === "" || undefined){
-         primaryCred = req.body.mobileNumber
-    }
+    let primaryCred = email ? "email" : "mobileNumber";
+    let inputValue = email || mobileNumber;
 
-    console.log("userInfo:",{email,role,ipAddress,password,number});
+    console.log("PrimaryCred:", primaryCred);
+    console.log("inputValue:", inputValue);
+    console.log("userInfo:", { email, role, ipAddress, password, mobileNumber });
 
     const existingUser = await User.findOne({
-        ipAddress,email,password,role
-    })
+        [primaryCred]: inputValue,
+        role: role
+    });
 
-
-    if(!existingUser){
+    if (!existingUser) {
         return res.status(400).json({
-            success : false,
-            message:"User Dosen't exist!!"
-        })
+            success: false,
+            message: "No existing user found!!",
+        });
     }
 
-    const userId = existingUser._id;
-    console.log(existingUser);
-
-    const keyToken =await Jwt.sign({
-            userId,firstName,email,password,ipAddress,role
-    },key_jwt);
+    const token = await Jwt.sign({
+        id: existingUser._id,
+        role,
+        firstName: existingUser.firstName,
+        lastName: existingUser.lastName,
+        inputValue,
+        ipAddress
+    }, key_jwt);
 
     return res.status(200).json({
-        success:true,
-        message:"User Signed in successfully!!",
-        userInformation:{ existingUser },
-        token:keyToken
-    })
+        success: true,
+        message: "User signed in successfully!!",
+        token
+    });
 }
 
 module.exports = SigninHandler;

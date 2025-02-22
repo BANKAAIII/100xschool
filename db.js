@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const mongoUri = process.env.MONGO_URI;
 const mongoose = require('mongoose');
+const { json } = require('stream/consumers');
 const { object, date, string } = require('zod');
 mongoose.connect(mongoUri)
     .then( ()=>{
@@ -12,6 +13,8 @@ mongoose.connect(mongoUri)
     .catch((err)=>{
         console.log(err);
     })
+
+    
 
 
     //User: Role,FirstName,LastName,Email,Password,MobileNumber,IpAddress,Key,QrCode,Classes
@@ -154,4 +157,74 @@ const SingleAttendance = mongoose.model("SingleAttendance",SingleAttendanceSchem
 
     const Announcement = mongoose.model("Announcement",AnnouncementSchema);
 
-    module.exports = {  User,Class ,SingleAttendance,ClassesDatabase,Announcement}
+
+    // Assignments Schema for professor
+
+    const AssignmentSchema = new mongoose.Schema({
+        creatorId : {
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"User",
+            required:true
+        },
+        classId:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"Class",
+            required:true
+        },
+        title:{
+            type:String,
+            required:true
+        },
+        content:{
+            type:String,
+            required:true
+        },
+        submission:[{
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"Submission",
+        }],
+        status:{
+            type:Boolean,
+            default:false,
+            required:true
+        },
+        timestamp:{
+            type:Date,
+            default: () =>Date.now(),
+            required:true
+        }
+    });
+
+    const Assignment = mongoose.model("Assignment",AssignmentSchema);
+
+    const SubmissionSchema = new mongoose.Schema({
+        studentId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        status: {
+            type: Boolean,
+            default: false,
+            required: true
+        },
+        profComment: {
+            type: String
+        },
+        fileData: {
+            fileName: { type: String, required: true }, // Original file name
+            contentType: { type: String, required: true }, // MIME type
+            data: { type: Buffer, required: true } // Binary file data
+        },
+        timestamp: {
+            type: Date,
+            default: () => Date.now(),
+            required: true
+        }
+    });
+    
+
+    const Submission = mongoose.model("Submission",SubmissionSchema);
+
+
+    module.exports = { Assignment, User,Class ,SingleAttendance,ClassesDatabase,Announcement}
