@@ -1,23 +1,23 @@
 require('dotenv').config();
+const { GridFSBucket } = require("mongodb");
 
 
 const mongoUri = process.env.MONGO_URI;
 const mongoose = require('mongoose');
-const { json } = require('stream/consumers');
-const { object, date, string } = require('zod');
+
 mongoose.connect(mongoUri)
-    .then( ()=>{
-        console.log("Database connected succesfully");
-    } )
 
-    .catch((err)=>{
-        console.log(err);
-    })
+    const db = mongoose.connection;
+    db.once( "open" , ()=>{ console.log("Database connected successfully");  } )
 
+    let gridFSBucket;
     
-
-
-    //User: Role,FirstName,LastName,Email,Password,MobileNumber,IpAddress,Key,QrCode,Classes
+    db.on("connected" , ()=>{ 
+        gridFSBucket = new GridFSBucket(db.db , { bucketName:"Submission" });
+        if(!gridFSBucket){
+            console.log("bucket inatialization failed");
+        }
+     })
 
     const UserSchema = new mongoose.Schema({
         role:{
@@ -227,4 +227,7 @@ const SingleAttendance = mongoose.model("SingleAttendance",SingleAttendanceSchem
     const Submission = mongoose.model("Submission",SubmissionSchema);
 
 
-    module.exports = { Assignment, User,Class ,SingleAttendance,ClassesDatabase,Announcement}
+    // Create a GridFs bucket and a multer Storage
+
+
+    module.exports = { Assignment, User,Class ,SingleAttendance,ClassesDatabase,Announcement, Submission, gridFSBucket}
